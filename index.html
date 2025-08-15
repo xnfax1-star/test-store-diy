@@ -178,8 +178,8 @@
 
   <script>
     // ====== إعدادات قابلة للتعديل ======
-    const ADMIN_EMAIL = 'admin@example.com'; // ← عدّل بريدك الإداري
-    const WA_NUMBER = '9665XXXXXXXX';      // ← ضع رقمك الدولي لواتساب
+    const ADMIN_EMAIL = 'ai.user.nab@gmail.com'; // ← عدّل بريدك الإداري
+    const WA_NUMBER = '966556070069';      // ← ضع رقمك الدولي لواتساب
 
     // ====== بيانات تجريبية ======
     const categories = [
@@ -189,37 +189,61 @@
     ];
 
     const products = [
-      {
-        id:'p-001', slug:'steel-stand', category:'metal-fab',
-        name:'ستاند معدني حسب الطلب',
-        desc:'تصنيع ستاند معدني بمقاسات وخامات متعددة وفق احتياجك.',
-        images:[
+      // ===== تشغيل معادن (5) =====
+      { id:'p-001', slug:'steel-stand', category:'metal-fab', name:'ستاند معدني حسب الطلب', desc:'تصنيع ستاند معدني بمقاسات وخامات متعددة وفق احتياجك.', images:[
           'https://images.unsplash.com/photo-1516542076529-1ea3854896e1?q=80&w=1200&auto=format&fit=crop',
           'https://images.unsplash.com/photo-1511385348-a52b4a160dc2?q=80&w=1200&auto=format&fit=crop',
           'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop'
-        ],
-        sizes:['صغير','متوسط','كبير'], materials:['ستانلس','ألمنيوم','حديد']
-      },
-      {
-        id:'p-002', slug:'lightbox-sign', category:'signage',
-        name:'لايت بوكس إعلاني',
-        desc:'لايت بوكس بإضاءة LED للواجهات الداخلية والخارجية.',
-        images:[
+        ], sizes:['صغير','متوسط','كبير'], materials:['ستانلس','ألمنيوم','حديد'] },
+      { id:'p-002', slug:'custom-rack', category:'metal-fab', name:'رف معدني مخصص', desc:'رفوف معدنية للعرض أو التخزين حسب المقاس.', images:[
+          'https://images.unsplash.com/photo-1581092921461-eab62e97a780?q=80&w=1200&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1585162290164-7a0030b036f3?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['50 سم','100 سم','150 سم'], materials:['ستانلس','حديد مطلي'] },
+      { id:'p-003', slug:'wall-bracket', category:'metal-fab', name:'حامل جداري معدني', desc:'حامل جداري قوي للأرفف والأجهزة.', images:[
+          'https://images.unsplash.com/photo-1527430253228-e93688616381?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['S','M','L'], materials:['حديد','فولاذ'] },
+      { id:'p-004', slug:'mesh-panel', category:'metal-fab', name:'شبك معدني', desc:'ألواح شبك معدني للتقسيمات والحواجز.', images:[
+          'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['1×2 م','1×3 م','2×3 م'], materials:['مجرّح','مضغوط'] },
+      { id:'p-005', slug:'metal-sign', category:'metal-fab', name:'لوحة معدنية محفورة', desc:'لوحات تعريفية محفورة بالليزر.', images:[
+          'https://images.unsplash.com/photo-1517059224940-d4af9eec41e5?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['A5','A4','A3'], materials:['ستانلس','ألمنيوم'] },
+
+      // ===== لوحات وإعلانات (5) =====
+      { id:'p-006', slug:'lightbox-sign', category:'signage', name:'لايت بوكس إعلاني', desc:'لايت بوكس بإضاءة LED للواجهات.', images:[
           'https://images.unsplash.com/photo-1545259741-2ea3ebf61fa9?q=80&w=1200&auto=format&fit=crop',
           'https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?q=80&w=1200&auto=format&fit=crop'
-        ],
-        sizes:['A3','A2','A1'], materials:['أكريليك','ألمنيوم']
-      },
-      {
-        id:'p-003', slug:'expo-booth', category:'events',
-        name:'جناح عرض (بوث) مودولار',
-        desc:'بوث نمطي قابل للتوسّع مع طباعة ورسومات.',
-        images:[
+        ], sizes:['A3','A2','A1'], materials:['أكريليك','ألمنيوم'] },
+      { id:'p-007', slug:'acrylic-letters', category:'signage', name:'حروف أكريليك مضيئة', desc:'حروف منفصلة بإضاءة خلفية.', images:[
+          'https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['20 سم','40 سم','60 سم'], materials:['أكريليك','PVC'] },
+      { id:'p-008', slug:'billboard-print', category:'signage', name:'طباعة لوحات طرقية', desc:'طباعة خارجية مقاومة للعوامل الجوية.', images:[
+          'https://images.unsplash.com/photo-1509099836639-18ba1795216d?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['3×2 م','4×3 م','6×3 م'], materials:['فلكس','فينيل'] },
+      { id:'p-009', slug:'rollup-stand', category:'signage', name:'رول أب ستاند', desc:'ستاند ترويجي سريع التركيب.', images:[
+          'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['80×200 سم','100×200 سم','120×200 سم'], materials:['ألمنيوم','قماش/فينيل'] },
+      { id:'p-010', slug:'window-graphics', category:'signage', name:'ملصقات زجاجية', desc:'قص ليزر مطفي/شفاف للنوافذ.', images:[
+          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['متر','2 متر','3 متر'], materials:['فينيyl مطفي','شفاف'] },
+
+      // ===== معارض وفعاليات (5) =====
+      { id:'p-011', slug:'expo-booth', category:'events', name:'جناح عرض (بوث) مودولار', desc:'بوث نمطي قابل للتوسّع مع طباعة.', images:[
           'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop',
           'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop'
-        ],
-        sizes:['3×3 م','6×3 م','6×6 م'], materials:['خشب','ألمنيوم','مركّب']
-      }
+        ], sizes:['3×3 م','6×3 م','6×6 م'], materials:['خشب','ألمنيوم','مركّب'] },
+      { id:'p-012', slug:'popup-stand', category:'events', name:'بوب أب خلفية', desc:'خلفية قماشية قابلة للطي.', images:[
+          'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['3 م','4 م','5 م'], materials:['قماش','فريم ألمنيوم'] },
+      { id:'p-013', slug:'counter-desk', category:'events', name:'كاونتر استقبال', desc:'كاونتر للفعاليات مع طباعة أمامية.', images:[
+          'https://images.unsplash.com/photo-1556745753-b2904692b3cd?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['مقاس قياسي','مخصص'], materials:['خشب','MDF','ألمنيوم'] },
+      { id:'p-014', slug:'truss-structure', category:'events', name:'هيكل تروس', desc:'هياكل تروس للإضاءة واللافتات.', images:[
+          'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['3×3 م','6×3 م','حسب الطلب'], materials:['ألمنيوم'] },
+      { id:'p-015', slug:'hanging-banner', category:'events', name:'بانر مُعلّق', desc:'بانر دائري/مستطيل مُعلّق للسقف.', images:[
+          'https://images.unsplash.com/photo-1487700160041-babef9c3cb55?q=80&w=1200&auto=format&fit=crop'
+        ], sizes:['قطر 2 م','قطر 3 م','مخصص'], materials:['قماش','PVC'] },
     ];
 
     // ====== أدوات عامة ======
@@ -235,6 +259,8 @@
 
     // ====== رندرة الصفحات ======
     function renderHome(){
+      // منتجات مميزة (أول 6)
+      const featured = products.slice(0,6);
       app.innerHTML = `
         <section class="grid cols-3">
           ${categories.map(c=>`<a class="card category-card" href="#/category/${c.slug}">
@@ -247,7 +273,7 @@
           <div class="card p24">
             <h3 style="margin:0 0 8px">منتجات مميزة</h3>
             <div class="grid cols-3" style="margin-top:12px">
-              ${products.map(p=>productCard(p)).join('')}
+              ${featured.map(p=>productCard(p)).join('')}
             </div>
           </div>
         </section>
@@ -284,7 +310,7 @@
     function renderCategory(slug){
       const cat = categories.find(c=>c.slug===slug);
       if(!cat){ app.innerHTML = `<div class=card p24>قسم غير موجود</div>`; return; }
-      const items = products.filter(p=>p.category===slug);
+      const items = products.filter(p=>p.category===slug).slice(0,5);
       app.innerHTML = `
         <div class="card p24">
           <div class="stack" style="justify-content:space-between;align-items:center">
@@ -515,7 +541,10 @@ ${notes}`);
       const mailto = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
       window.location.href = mailto;
 
-      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('طلب عرض سعر جديد%0A%0A'+lines.join('%0A'))}`;
+      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('طلب عرض سعر جديد
+
+'+lines.join('
+'))}`;
       setTimeout(()=>window.open(wa,'_blank'), 400);
 
       showToast('تم إنشاء مسودة الإرسال');
@@ -536,7 +565,9 @@ ${notes}`);
 الرسالة:
 ${message}`);
       window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
-      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('رسالة تواصل من '+name+'%0A%0A'+message)}`;
+      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('رسالة تواصل من '+name+'
+
+'+message)}`;
       setTimeout(()=>window.open(wa,'_blank'), 400);
       showToast('تم تجهيز رسالة التواصل');
     }
@@ -564,8 +595,11 @@ ${message}`);
 ${details}`
       );
       window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
-      const waText = `طلب خدمة جديد%0Aالنوع: ${type}%0Aالاسم: ${encodeURIComponent(name)}%0A${encodeURIComponent(details)}`;
-      setTimeout(()=>window.open(`https://wa.me/${WA_NUMBER}?text=${waText}`, '_blank'), 400);
+      const waText = `طلب خدمة جديد
+النوع: ${type}
+الاسم: ${name}
+${details}`;
+      setTimeout(()=>window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waText)}`, '_blank'), 400);
       showToast('تم تجهيز طلب الخدمة');
     }
 
