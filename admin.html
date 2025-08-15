@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>لوحة التحكم — ديمو المتجر (LocalStorage)</title>
+  <style>
+    :root{--w:1200px;--gap:14px;--r:14px}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Kufi Arabic",Tahoma,Arial,sans-serif;background:#0b0c0f;color:#fff}
+    a{color:inherit;text-decoration:none}
+    header{position:sticky;top:0;background:rgba(10,11,15,.9);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid #222;z-index:20}
+    header .inner{max-width:var(--w);margin:auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;gap:10px;align-items:center;font-weight:700}
+    .brand .dot{width:12px;height:12px;border-radius:999px;background:#22c55e;display:inline-block}
+    .container{max-width:var(--w);margin:auto;padding:20px}
+    .grid{display:grid;gap:var(--gap)}
+    .grid.cols-2{grid-template-columns:1fr 1fr}
+    @media(max-width:900px){.grid.cols-2{grid-template-columns:1fr}}
+    .card{background:#0f1117;border:1px solid #1e2130;border-radius:var(--r);overflow:hidden}
+    .p16{padding:16px}.p20{padding:20px}
+    .muted{color:#94a3b8}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid #24314d;background:#0e1320;color:#fff;cursor:pointer}
+    .btn.primary{background:#1d283a;border-color:#2b3a5b}
+    .btn.destructive{border-color:#3b2626;background:#2a1111;color:#fecaca}
+    .stack{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .field label{display:block;margin:6px 0 6px;font-size:13px;color:#cbd5e1}
+    .field input,.field textarea,.field select{width:100%;padding:10px;border-radius:12px;border:1px solid #22283a;background:#0c0e13;color:#fff}
+    textarea{min-height:120px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #1e2130;padding:10px;text-align:start;font-size:14px}
+    tr:hover td{background:#0c0e13}
+    .badge{background:#111827;border:1px solid #24314d;padding:4px 8px;border-radius:999px;font-size:12px}
+    .toast{position:fixed;top:18px;right:18px;background:#0e1320;border:1px solid #24314d;color:#dbeafe;padding:10px 14px;border-radius:12px;display:none;z-index:80}
+    .toast.show{display:block}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    .tabs a{padding:8px 12px;border-radius:12px;border:1px solid #24314d;background:#0e1320}
+    .tabs a.active{outline:2px solid #3b82f6}
+    .login{max-width:420px;margin:40px auto}
+    .warn{background:#1f2937;border:1px solid #374151;padding:10px;border-radius:10px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> لوحة التحكم — ديمو</div>
+      <nav class="stack">
+        <a class="btn" href="index.html" target="_blank">فتح المتجر</a>
+        <button class="btn" onclick="logout()">تسجيل الخروج</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" id="app"></main>
+  <div class="toast" id="toast">تم الحفظ</div>
+
+  <script>
+    // مفاتيح التخزين
+    const K = {
+      auth: 'admin_auth',
+      cats: 'cms_categories',
+      prods: 'cms_products',
+      orders: 'rfq_orders'
+    };
+
+    const $ = (s)=>document.querySelector(s);
+    const app = $('#app');
+
+    // ===== Auth =====
+    const DEFAULT_USER = 'admin';
+    const DEFAULT_PASS = '123456'; // للتجربة فقط
+
+    function isAuthed(){ try{ return JSON.parse(localStorage.getItem(K.auth)||'{}').ok }catch{ return false } }
+    function login(e){
+      e.preventDefault();
+      const u = $('#u').value.trim();
+      const p = $('#p').value.trim();
+      if(u===DEFAULT_USER && p===DEFAULT_PASS){
+        localStorage.setItem(K.auth, JSON.stringify({ok:true, at:Date.now()}));
+        route('dashboard');
+        toast('تم تسجيل الدخول');
+      }else toast('بيانات الدخول غير صحيحة');
+    }
+    function logout(){ localStorage.removeItem(K.auth); route('login'); }
+
+    // ===== Helpers =====
+    function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1400) }
+    function read(key, fallback){ try{ return JSON.parse(localStorage.getItem(key)||'') || fallback }catch{ return fallback } }
+    function write(key, data){ localStorage.setItem(key, JSON.stringify(data)); toast('تم الحفظ'); }
+    function slugify(s){ return s.toString().trim().toLowerCase().replace(/\s+/g,'-').replace(/[^\w\-]+/g,'').replace(/\-\-+/g,'-') }
+
+    // ===== Views =====
+    function viewLogin(){
+      app.innerHTML = `
+        <section class="card p20 login">
+          <h2 style="margin:0 0 10px">تسجيل الدخول</h2>
+          <p class="muted">(دخول تجريبي — USER: <b>${DEFAULT_USER}</b> / PASS: <b>${DEFAULT_PASS}</b>)</p>
+          <form onsubmit="login(event)" class="grid">
+            <div class="field"><label>اسم المستخدم</label><input id="u" required></div>
+            <div class="field"><label>كلمة المرور</label><input id="p" type="password" required></div>
+            <div class="stack"><button class="btn primary" type="submit">دخول</button></div>
+          </form>
+        </section>`;
+    }
+
+    function tabs(active){
+      return `
+        <nav class="tabs">
+          <a href="#" onclick="route('dashboard');return false" class="${active==='dashboard'?'active':''}">لوحة المعلومات</a>
+          <a href="#" onclick="route('categories');return false" class="${active==='categories'?'active':''}">الأقسام</a>
+          <a href="#" onclick="route('products');return false" class="${active==='products'?'active':''}">المنتجات</a>
+          <a href="#" onclick="route('orders');return false" class="${active==='orders'?'active':''}">طلبات عرض السعر</a>
+          <a href="#" onclick="route('import');return false" class="${active==='import'?'active':''}">استيراد/تصدير</a>
+        </nav>`;
+    }
+
+    function viewDashboard(){
+      const cats = read(K.cats, []);
+      const prods = read(K.prods, []);
+      const orders = read(K.orders, []);
+      app.innerHTML = `
+        ${tabs('dashboard')}
+        <section class="grid cols-2">
+          <div class="card p20">
+            <h3>إحصائيات سريعة</h3>
+            <div class="stack" style="margin-top:8px">
+              <span class="badge">الأقسام: ${cats.length}</span>
+              <span class="badge">المنتجات: ${prods.length}</span>
+              <span class="badge">طلبات السعر: ${orders.length}</span>
+            </div>
+            <p class="muted" style="margin-top:10px">ملاحظة: يتم الحفظ محليًا على المتصفح (LocalStorage) لأغراض الديمو.</p>
+          </div>
+          <div class="card p20">
+            <h3>نقطة الربط مع المتجر</h3>
+            <p class="muted">لكي تظهر التعديلات في واجهة المتجر (<code>index.html</code>) أضِف السطور أدناه داخل سكربت الصفحة:</p>
+            <div class="warn">
+<pre style="white-space:pre-wrap;direction:ltr">
+// 1) حمّل تهيئة لوحة التحكم إن وجدت
+const CMS_CATS = JSON.parse(localStorage.getItem('cms_categories')||'[]');
+const CMS_PRODS = JSON.parse(localStorage.getItem('cms_products')||'[]');
+if (CMS_CATS.length) window.categories = CMS_CATS; // استبدل القيم الافتراضية
+if (CMS_PRODS.length) window.products  = CMS_PRODS;
+
+// 2) عند إرسال طلب عرض السعر خزّنه محليًا للعرض في لوحة التحكم
+function saveOrderForAdmin(order){
+  const list = JSON.parse(localStorage.getItem('rfq_orders')||'[]');
+  list.push(order);
+  localStorage.setItem('rfq_orders', JSON.stringify(list));
+}
+// نادِ هذه الدالة داخل submitQuote قبل إرسال البريد/الواتساب:
+// saveOrderForAdmin({ name, email, phone, notes, items: cart, createdAt: Date.now() });
+</pre>
+            </div>
+          </div>
+        </section>`;
+    }
+
+    function viewCategories(){
+      const cats = read(K.cats, []);
+      app.innerHTML = `
+        ${tabs('categories')}
+        <section class="card p20">
+          <h3 style="margin-top:0">إدارة الأقسام</h3>
+          <form onsubmit="saveCategory(event)" class="grid">
+            <div class="field"><label>اسم القسم</label><input id="cName" required></div>
+            <div class="field"><label>صورة القسم (رابط)</label><input id="cImage" placeholder="https://..."></div>
+            <div class="stack"><button class="btn primary" type="submit">إضافة قسم</button></div>
+          </form>
+          <hr style="border-color:#1e2130;margin:14px 0">
+          <table>
+            <thead><tr><th>الاسم</th><th>Slug</th><th>صورة</th><th>إجراءات</th></tr></thead>
+            <tbody id="catRows">${cats.map((c,i)=>rowCat(c,i)).join('')}</tbody>
+          </table>
+        </section>`;
+    }
+
+    function rowCat(c,i){
+      return `<tr>
+        <td>${c.name}</td>
+        <td class="muted">${c.slug}</td>
+        <td>${c.image?`<img src="${c.image}" alt="" style="width:60px;height:40px;object-fit:cover;border:1px solid #1e2130;border-radius:6px">`:''}</td>
+        <td class="stack">
+          <button class="btn" onclick="editCat(${i})">تعديل</button>
+          <button class="btn destructive" onclick="delCat(${i})">حذف</button>
+        </td>
+      </tr>`
+    }
+
+    function saveCategory(e){
+      e.preventDefault();
+      const name=$('#cName').value.trim();
+      const image=$('#cImage').value.trim();
+      const cats = read(K.cats, []);
+      const slug = slugify(name);
+      cats.push({slug,name,image});
+      write(K.cats, cats);
+      route('categories');
+    }
+
+    function editCat(i){
+      const cats = read(K.cats, []);
+      const c = cats[i];
+      const name = prompt('اسم القسم', c.name); if(name===null) return;
+      const image = prompt('رابط الصورة', c.image||''); if(image===null) return;
+      cats[i] = {slug:slugify(name), name, image};
+      write(K.cats, cats); route('categories');
+    }
+    function delCat(i){ const cats=read(K.cats,[]); cats.splice(i,1); write(K.cats,cats); route('categories'); }
+
+    function viewProducts(){
+      const prods = read(K.prods, []);
+      const cats = read(K.cats, []);
+      app.innerHTML = `
+        ${tabs('products')}
+        <section class="card p20">
+          <h3 style="margin-top:0">إدارة المنتجات</h3>
+          <form onsubmit="saveProduct(event)" class="grid">
+            <div class="field"><label>الاسم</label><input id="pName" required></div>
+            <div class="field"><label>القسم</label>
+              <select id="pCat">${cats.map(c=>`<option value="${c.slug}">${c.name}</option>`).join('')}</select>
+            </div>
+            <div class="field"><label>الوصف</label><input id="pDesc" placeholder="وصف مختصر"></div>
+            <div class="field"><label>صور (روابط مفصولة بفواصل)</label><input id="pImages" placeholder="https://img1, https://img2"></div>
+            <div class="field"><label>المقاسات (قائمة مفصولة بفواصل)</label><input id="pSizes" placeholder="صغير, متوسط, كبير"></div>
+            <div class="field"><label>الخامات (قائمة مفصولة بفواصل)</label><input id="pMaterials" placeholder="ستانلس, ألمنيوم"></div>
+            <div class="stack"><button class="btn primary" type="submit">إضافة منتج</button></div>
+          </form>
+          <hr style="border-color:#1e2130;margin:14px 0">
+          <table>
+            <thead><tr><th>الاسم</th><th>القسم</th><th>Slug</th><th>صور</th><th>إجراءات</th></tr></thead>
+            <tbody id="prodRows">${prods.map((p,i)=>rowProd(p,i)).join('')}</tbody>
+          </table>
+        </section>`;
+    }
+
+    function rowProd(p,i){
+      const img = (p.images&&p.images[0])||'';
+      return `<tr>
+        <td>${p.name}</td>
+        <td class="muted">${p.category}</td>
+        <td class="muted">${p.slug}</td>
+        <td>${img?`<img src="${img}" alt="" style="width:60px;height:60px;object-fit:cover;border:1px solid #1e2130;border-radius:6px">`:''}</td>
+        <td class="stack">
+          <button class="btn" onclick="editProd(${i})">تعديل</button>
+          <button class="btn destructive" onclick="delProd(${i})">حذف</button>
+        </td>
+      </tr>`
+    }
+
+    function saveProduct(e){
+      e.preventDefault();
+      const name=$('#pName').value.trim();
+      const category=$('#pCat').value;
+      const desc=$('#pDesc').value.trim();
+      const images=$('#pImages').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const sizes=$('#pSizes').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const materials=$('#pMaterials').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const prods=read(K.prods, []);
+      const id = 'p-'+Math.random().toString(36).slice(2,7);
+      const slug = slugify(name);
+      prods.push({id,slug,category,name,desc,images,sizes,materials});
+      write(K.prods, prods);
+      route('products');
+    }
+
+    function editProd(i){
+      const prods=read(K.prods, []);
+      const p=prods[i];
+      const name=prompt('اسم المنتج', p.name); if(name===null) return;
+      const category=prompt('Slug القسم', p.category); if(category===null) return;
+      const desc=prompt('وصف مختصر', p.desc||''); if(desc===null) return;
+      const images=prompt('صور (مفصولة بفواصل)', (p.images||[]).join(', ')); if(images===null) return;
+      const sizes=prompt('المقاسات', (p.sizes||[]).join(', ')); if(sizes===null) return;
+      const materials=prompt('الخامات', (p.materials||[]).join(', ')); if(materials===null) return;
+      prods[i] = { ...p, name, category, desc, images:images.split(',').map(s=>s.trim()).filter(Boolean), sizes:sizes.split(',').map(s=>s.trim()).filter(Boolean), materials:materials.split(',').map(s=>s.trim()).filter(Boolean), slug: slugify(name) };
+      write(K.prods, prods); route('products');
+    }
+    function delProd(i){ const prods=read(K.prods,[]); prods.splice(i,1); write(K.prods,prods); route('products'); }
+
+    function viewOrders(){
+      const orders = read(K.orders, []);
+      app.innerHTML = `
+        ${tabs('orders')}
+        <section class="card p20">
+          <h3 style="margin-top:0">طلبات عرض السعر (${orders.length})</h3>
+          <div id="ordersWrap">${orders.map(rowOrder).join('') || '<p class="muted">لا توجد طلبات محفوظة بعد.</p>'}</div>
+          <div class="stack" style="margin-top:12px">
+            <button class="btn destructive" onclick="clearOrders()">تفريغ جميع الطلبات</button>
+          </div>
+          <p class="muted" style="margin-top:8px">لتخزين الطلب تلقائيًا: أضِف دالة <code>saveOrderForAdmin</code> إلى <code>index.html</code> واستدعها في <code>submitQuote</code>.</p>
+        </section>`;
+    }
+
+    function rowOrder(o, i){
+      const when = new Date(o.createdAt||Date.now()).toLocaleString('ar-SA');
+      const lines = (o.items||[]).map((it,idx)=>`${idx+1}) ${it.name} ×${it.qty} • ${it.size} • ${it.material}`).join('\n');
+      return `<div class="card p16" style="margin-bottom:10px">
+        <div class="stack" style="justify-content:space-between;align-items:center">
+          <div><b>${o.name||'بدون اسم'}</b> <span class="muted">— ${o.email||''} — ${o.phone||''}</span></div>
+          <span class="badge">${when}</span>
+        </div>
+        <pre style="white-space:pre-wrap;direction:ltr;margin-top:8px">${lines||'-'}</pre>
+        <div class="muted">ملاحظات: ${o.notes||'-'}</div>
+      </div>`
+    }
+
+    function clearOrders(){ if(confirm('تفريغ جميع الطلبات؟')){ localStorage.removeItem(K.orders); toast('تم الحذف'); route('orders'); } }
+
+    function viewImportExport(){
+      const cats = read(K.cats, []);
+      const prods = read(K.prods, []);
+      app.innerHTML = `
+        ${tabs('import')}
+        <section class="grid cols-2">
+          <div class="card p20">
+            <h3>تصدير البيانات</h3>
+            <p class="muted">انسخ المحتوى واحفظه.</p>
+            <div class="field"><label>الأقسام (JSON)</label><textarea id="outCats">${JSON.stringify(cats,null,2)}</textarea></div>
+            <div class="field"><label>المنتجات (JSON)</label><textarea id="outProds">${JSON.stringify(prods,null,2)}</textarea></div>
+          </div>
+          <div class="card p20">
+            <h3>استيراد البيانات</h3>
+            <p class="muted">ألصق JSON صالحًا ثم اضغط حفظ.</p>
+            <div class="field"><label>الأقسام (JSON)</label><textarea id="inCats" placeholder='[ {"slug":"...","name":"...","image":"..."} ]'></textarea></div>
+            <div class="field"><label>المنتجات (JSON)</label><textarea id="inProds" placeholder='[ {"id":"p-xyz","slug":"...","category":"...","name":"...","desc":"...","images":[],"sizes":[],"materials":[]} ]'></textarea></div>
+            <div class="stack"><button class="btn primary" onclick="doImport()">حفظ</button></div>
+          </div>
+        </section>`;
+    }
+
+    function doImport(){
+      try{
+        const cats = JSON.parse($('#inCats').value||'[]');
+        const prods = JSON.parse($('#inProds').value||'[]');
+        if(!Array.isArray(cats) || !Array.isArray(prods)) throw new Error('تنسيق غير صحيح');
+        write(K.cats, cats); write(K.prods, prods);
+        toast('تم الاستيراد'); route('dashboard');
+      }catch(err){ toast('فشل الاستيراد: '+err.message) }
+    }
+
+    // ===== Router =====
+    function route(view){
+      if(!isAuthed() && view!=='login') return viewLogin();
+      switch(view){
+        case 'login': return viewLogin();
+        case 'dashboard': return viewDashboard();
+        case 'categories': return viewCategories();
+        case 'products': return viewProducts();
+        case 'orders': return viewOrders();
+        case 'import': return viewImportExport();
+        default: return viewDashboard();
+      }
+    }
+
+    // boot
+    route('dashboard');
+  </script>
+</body>
+</html>
