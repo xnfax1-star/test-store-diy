@@ -619,6 +619,23 @@
 
     window.addEventListener('hashchange', router);
     window.addEventListener('load', ()=>{ router(); runSelfTests(); });
+    // 1) حمّل تهيئة لوحة التحكم إن وجدت
+const CMS_CATS = JSON.parse(localStorage.getItem('cms_categories')||'[]');
+const CMS_PRODS = JSON.parse(localStorage.getItem('cms_products')||'[]');
+if (CMS_CATS.length) window.categories = CMS_CATS; // استبدل القيم الافتراضية
+if (CMS_PRODS.length) window.products  = CMS_PRODS;
+
+// 2) خزّن طلب عرض السعر محليًا ليظهر داخل لوحة التحكم
+function saveOrderForAdmin(order){
+  const list = JSON.parse(localStorage.getItem('rfq_orders')||'[]');
+  list.push(order);
+  localStorage.setItem('rfq_orders', JSON.stringify(list));
+}
+// داخل submitQuote قبل إرسال البريد/الواتساب:
+saveOrderForAdmin({ name, email, phone, notes, items: cart, createdAt: Date.now() });
+
   </script>
+  
 </body>
 </html>
+
