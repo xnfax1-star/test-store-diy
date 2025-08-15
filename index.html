@@ -619,20 +619,153 @@
 
     window.addEventListener('hashchange', router);
     window.addEventListener('load', ()=>{ router(); runSelfTests(); });
-    // 1) حمّل تهيئة لوحة التحكم إن وجدت
-const CMS_CATS = JSON.parse(localStorage.getItem('cms_categories')||'[]');
-const CMS_PRODS = JSON.parse(localStorage.getItem('cms_products')||'[]');
-if (CMS_CATS.length) window.categories = CMS_CATS; // استبدل القيم الافتراضية
-if (CMS_PRODS.length) window.products  = CMS_PRODS;
+   <!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>متجر تجريبي - طلب عرض سعر</title>
+<style>
+/* تنسيق بسيط */
+body { font-family: sans-serif; margin: 0; padding: 0; direction: rtl; }
+header { background: #333; color: #fff; padding: 10px; }
+header nav a { color: #fff; margin: 0 10px; text-decoration: none; }
+#app { padding: 20px; }
+.product-card { border: 1px solid #ccc; padding: 10px; display: inline-block; margin: 5px; width: 200px; }
+</style>
+</head>
+<body>
 
-// 2) خزّن طلب عرض السعر محليًا ليظهر داخل لوحة التحكم
-function saveOrderForAdmin(order){
-  const list = JSON.parse(localStorage.getItem('rfq_orders')||'[]');
+<header>
+<nav>
+<a href="#/">الرئيسية</a>
+<a href="#/categories">الأقسام</a>
+<a href="#/quote">سلة عرض السعر</a>
+<a href="#/about">نبذة عنا</a>
+<a href="#/service">طلب خدمة</a>
+<a href="#/contact">تواصل</a>
+</nav>
+</header>
+
+<main id="app"></main>
+
+<script>
+const ADMIN_EMAIL = 'admin@example.com';
+const WA_NUMBER   = '9665XXXXXXXX';
+
+// بيانات افتراضية لو ما فيه بيانات من لوحة التحكم
+let categories = [
+  {id: 'cat1', name: 'قسم 1', products: []},
+  {id: 'cat2', name: 'قسم 2', products: []},
+  {id: 'cat3', name: 'قسم 3', products: []}
+];
+
+for (let cat of categories) {
+  for (let i = 1; i <= 5; i++) {
+    cat.products.push({
+      id: `${cat.id}-p${i}`,
+      name: `منتج ${i} - ${cat.name}`,
+      desc: 'وصف قصير للمنتج.',
+      img: 'https://via.placeholder.com/200',
+    });
+  }
+}
+
+// --- جلب بيانات لوحة التحكم إن وجدت ---
+const CMS_CATS = JSON.parse(localStorage.getItem('cms_categories') || '[]');
+if (CMS_CATS.length) categories = CMS_CATS;
+
+// --- السلة ---
+let cart = JSON.parse(localStorage.getItem('rfq_cart') || '[]');
+function saveCart() { localStorage.setItem('rfq_cart', JSON.stringify(cart)); }
+
+// --- حفظ الطلبات للوحة التحكم ---
+function saveOrderForAdmin(order) {
+  const list = JSON.parse(localStorage.getItem('rfq_orders') || '[]');
   list.push(order);
   localStorage.setItem('rfq_orders', JSON.stringify(list));
 }
-// داخل submitQuote قبل إرسال البريد/الواتساب:
-saveOrderForAdmin({ name, email, phone, notes, items: cart, createdAt: Date.now() });
+
+// --- عرض الصفحات ---
+function render() {
+  const hash = location.hash || '#/';
+  const app = document.getElementById('app');
+
+  if (hash === '#/' || hash === '') {
+    app.innerHTML = `<h1>الرئيسية</h1>${categories.map(c=>`<div><a href="#/category/${c.id}">${c.name}</a></div>`).join('')}`;
+  }
+  else if (hash === '#/categories') {
+    app.innerHTML = `<h1>جميع الأقسام</h1>${categories.map(c=>`<div><a href="#/category/${c.id}">${c.name}</a></div>`).join('')}`;
+  }
+  else if (hash.startsWith('#/category/')) {
+    const id = hash.split('/')[2];
+    const cat = categories.find(c=>c.id===id);
+    if (!cat) { app.innerHTML = 'قسم غير موجود'; return; }
+    app.innerHTML = `<h1>${cat.name}</h1>${cat.products.map(p=>`
+      <div class="product-card">
+        <img src="${p.img}"/>
+        <h3>${p.name}</h3>
+        <a href="#/product/${p.id}">عرض</a>
+      </div>`).join('')}`;
+  }
+  else if (hash.startsWith('#/product/')) {
+    const pid = hash.split('/')[2];
+    let prod;
+    for (let c of categories) { prod = c.products.find(p=>p.id===pid) || prod; }
+    if (!prod) { app.innerHTML = 'منتج غير موجود'; return; }
+    app.innerHTML = `<h1>${prod.name}</h1>
+      <img src="${prod.img}"/>
+      <p>${prod.desc}</p>
+      <button onclick="addToCart('${prod.id}')">أضف لطلب السعر</button>`;
+  }
+  else if (hash === '#/quote') {
+    app.innerHTML = `<h1>سلة عرض السعر</h1>
+      ${cart.map(item=>`<div>${item.name}</div>`).join('')}
+      <br>
+      <button onclick="submitQuote()">إرسال الطلب</button>`;
+  }
+  else if (hash === '#/about') {
+    app.innerHTML = '<h1>نبذة عنا</h1><p>محتوى نبذة عنا...</p>';
+  }
+  else if (hash === '#/service') {
+    app.innerHTML = '<h1>طلب خدمة</h1><form><input placeholder="الاسم"/><input placeholder="البريد"/><textarea placeholder="الخدمة المطلوبة"></textarea><button>إرسال</button></form>';
+  }
+  else if (hash === '#/contact') {
+    app.innerHTML = '<h1>تواصل معنا</h1><form><input placeholder="الاسم"/><input placeholder="البريد"/><textarea placeholder="رسالتك"></textarea><button>إرسال</button></form>';
+  }
+}
+
+// --- إضافة للسلة ---
+function addToCart(pid) {
+  let prod;
+  for (let c of categories) { prod = c.products.find(p=>p.id===pid) || prod; }
+  if (!prod) return;
+  cart.push(prod);
+  saveCart();
+  alert('تمت الإضافة للسلة');
+}
+
+// --- إرسال الطلب ---
+function submitQuote() {
+  const order = {
+    name: "عميل تجريبي",
+    email: "client@example.com",
+    phone: "0500000000",
+    notes: "",
+    items: cart,
+    createdAt: Date.now()
+  };
+  saveOrderForAdmin(order);
+  alert('تم إرسال الطلب (تجريبي)');
+}
+
+window.addEventListener('hashchange', render);
+render();
+</script>
+
+</body>
+</html>
+
 
   </script>
   
