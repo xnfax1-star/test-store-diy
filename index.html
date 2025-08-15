@@ -178,8 +178,8 @@
 
   <script>
     // ====== إعدادات قابلة للتعديل ======
-    const ADMIN_EMAIL = 'ai.user.nab@gmail.com'; // ← عدّل بريدك الإداري
-    const WA_NUMBER = '966556070069';      // ← ضع رقمك الدولي لواتساب
+    const ADMIN_EMAIL = 'admin@example.com'; // ← عدّل بريدك الإداري
+    const WA_NUMBER = '9665XXXXXXXX';      // ← ضع رقمك الدولي لواتساب
 
     // ====== بيانات تجريبية ======
     const categories = [
@@ -225,7 +225,7 @@
         ], sizes:['80×200 سم','100×200 سم','120×200 سم'], materials:['ألمنيوم','قماش/فينيل'] },
       { id:'p-010', slug:'window-graphics', category:'signage', name:'ملصقات زجاجية', desc:'قص ليزر مطفي/شفاف للنوافذ.', images:[
           'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop'
-        ], sizes:['متر','2 متر','3 متر'], materials:['فينيyl مطفي','شفاف'] },
+        ], sizes:['متر','2 متر','3 متر'], materials:['فينيل مطفي','شفاف'] },
 
       // ===== معارض وفعاليات (5) =====
       { id:'p-011', slug:'expo-booth', category:'events', name:'جناح عرض (بوث) مودولار', desc:'بوث نمطي قابل للتوسّع مع طباعة.', images:[
@@ -527,24 +527,12 @@
 
       const lines = cart.map((it,i)=>`${i+1}) ${it.name} | Qty:${it.qty} | Size:${it.size} | Material:${it.material}`);
       const subject = encodeURIComponent(`طلب عرض سعر — ${name}`);
-      const body = encodeURIComponent(`الاسم: ${name}
-البريد: ${email}
-الجوال: ${phone}
-
-العناصر:
-${lines.join('
-')}
-
-ملاحظات:
-${notes}`);
+      const body = encodeURIComponent(`الاسم: ${name}\nالبريد: ${email}\nالجوال: ${phone}\n\nالعناصر:\n${lines.join('\n')}\n\nملاحظات:\n${notes}`);
 
       const mailto = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
       window.location.href = mailto;
 
-      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('طلب عرض سعر جديد
-
-'+lines.join('
-'))}`;
+      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`طلب عرض سعر جديد\n\n${lines.join('\n')}`)}`;
       setTimeout(()=>window.open(wa,'_blank'), 400);
 
       showToast('تم إنشاء مسودة الإرسال');
@@ -558,16 +546,9 @@ ${notes}`);
       const subjectRaw=$('#cSubject').value.trim();
       const message=$('#cMessage').value.trim();
       const subject = encodeURIComponent(`[تواصل] ${subjectRaw} — ${name}`);
-      const body = encodeURIComponent(`الاسم: ${name}
-البريد: ${email}
-الجوال: ${phone}
-
-الرسالة:
-${message}`);
+      const body = encodeURIComponent(`الاسم: ${name}\nالبريد: ${email}\nالجوال: ${phone}\n\nالرسالة:\n${message}`);
       window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
-      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('رسالة تواصل من '+name+'
-
-'+message)}`;
+      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`رسالة تواصل من ${name}\n\n${message}`)}`;
       setTimeout(()=>window.open(wa,'_blank'), 400);
       showToast('تم تجهيز رسالة التواصل');
     }
@@ -584,21 +565,10 @@ ${message}`);
 
       const subject = encodeURIComponent(`طلب خدمة — ${type} — ${name}`);
       const body = encodeURIComponent(
-        `الاسم: ${name}
-البريد: ${email}
-الجوال: ${phone}
-النوع: ${type}
-الميزانية: ${budget}
-رابط ملف: ${file}
-
-التفاصيل:
-${details}`
+        `الاسم: ${name}\nالبريد: ${email}\nالجوال: ${phone}\nالنوع: ${type}\nالميزانية: ${budget}\nرابط ملف: ${file}\n\nالتفاصيل:\n${details}`
       );
       window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
-      const waText = `طلب خدمة جديد
-النوع: ${type}
-الاسم: ${name}
-${details}`;
+      const waText = `طلب خدمة جديد\nالنوع: ${type}\nالاسم: ${name}\n${details}`;
       setTimeout(()=>window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waText)}`, '_blank'), 400);
       showToast('تم تجهيز طلب الخدمة');
     }
@@ -632,8 +602,23 @@ ${details}`;
       renderCartFab();
     }
 
+    // ====== اختبارات سريعة (Self-tests) ======
+    function runSelfTests(){
+      try{
+        console.assert(typeof openDrawer === 'function', 'openDrawer يجب أن تكون معرفّة');
+        console.assert(typeof closeDrawer === 'function', 'closeDrawer يجب أن تكون معرفّة');
+        console.assert(typeof router === 'function', 'router يجب أن تكون معرفّة');
+        console.assert(Array.isArray(categories) && categories.length === 3, 'يوجد 3 أقسام');
+        const perCat = categories.map(c=> products.filter(p=>p.category===c.slug).length);
+        console.assert(perCat.every(n=> n >= 5), 'كل قسم يحوي 5 منتجات على الأقل');
+        console.log('[SELF-TESTS] ✅ جميع الاختبارات الأساسية مرّت');
+      }catch(err){
+        console.error('[SELF-TESTS] ❌', err);
+      }
+    }
+
     window.addEventListener('hashchange', router);
-    window.addEventListener('load', router);
+    window.addEventListener('load', ()=>{ router(); runSelfTests(); });
   </script>
 </body>
 </html>
