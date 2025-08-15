@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>متجر — نموذج ديمو متعدد الصفحات (SPA)</title>
+  <style>
+    :root{--container:1200px;--gap:16px;--radius:16px}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Kufi Arabic",Tahoma,Arial,sans-serif;background:#0b0c0f;color:#fff}
+    a{color:inherit;text-decoration:none}
+    .container{max-width:var(--container);margin:auto;padding:24px}
+    header{position:sticky;top:0;background:rgba(10,11,15,.9);backdrop-filter:saturate(180%) blur(8px);z-index:50;border-bottom:1px solid #222}
+    header .inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 24px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700;cursor:pointer}
+    .brand .logo{width:36px;height:36px;border-radius:50%;background:linear-gradient(45deg,#777,#bbb);display:inline-block}
+    .nav{display:flex;gap:12px;flex-wrap:wrap}
+    .nav a{padding:8px 12px;border-radius:999px;background:#12131a;border:1px solid #1e2130}
+
+    /* Hero/Slider placeholder */
+    .hero{position:relative;overflow:hidden;border-radius:24px;margin:16px 24px;background:#12131a;border:1px solid #1e2130}
+    .hero .slide{aspect-ratio:16/6;display:grid;place-items:center;color:#cbd5e1}
+
+    /* Layout */
+    .grid{display:grid;gap:var(--gap)}
+    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+    @media(max-width:900px){.grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns:1fr}}
+
+    .card{background:#0f1117;border:1px solid #1e2130;border-radius:var(--radius);overflow:hidden}
+    .card h3{margin:0 0 8px}
+    .p16{padding:16px}.p24{padding:24px}
+
+    .category-card img{width:100%;aspect-ratio:16/10;object-fit:cover;border-bottom:1px solid #1e2130}
+
+    /* Product card */
+    .product-card{display:flex;flex-direction:column;gap:10px}
+    .product-card img{width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid #1e2130;border-radius:12px}
+
+    /* Product page */
+    .product-layout{display:grid;gap:var(--gap)}
+    @media(min-width:900px){.product-layout{grid-template-columns:1.1fr .9fr}}
+
+    .gallery{display:grid;gap:12px;grid-template-columns:1fr}
+    .gallery .main{aspect-ratio:1/1.05;background:#0c0e13;border:1px solid #1e2130;border-radius:12px;display:grid;place-items:center}
+    .thumbs{display:grid;gap:8px;grid-template-columns:repeat(5,1fr)}
+    .thumbs img{width:100%;aspect-ratio:1;border-radius:10px;border:1px solid #1e2130;opacity:.85;cursor:pointer}
+    .thumbs img.active{outline:2px solid #3b82f6;opacity:1}
+
+    /* Forms */
+    .price-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#12131a;border:1px dashed #2a3145;font-size:12px;color:#94a3b8}
+    .form-grid{display:grid;gap:12px;grid-template-columns:1fr}
+    @media(min-width:520px){.form-grid{grid-template-columns:1fr 1fr}}
+    .field label{display:block;margin-bottom:6px;font-size:13px;color:#cbd5e1}
+    .field select,.field textarea,.field input[type="number"],.field input[type="text"],.field input[type="email"],.field input[type="tel"]{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #22283a;background:#0c0e13;color:#fff}
+    textarea{min-height:120px;resize:vertical}
+    .muted{color:#94a3b8;font-size:14px;line-height:1.7}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border-radius:14px;border:1px solid #27314b;background:#0e1320;color:#fff;cursor:pointer}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:#1d283a;border-color:#2b3a5b}
+    .btn.full{width:100%}
+    .stack{display:flex;gap:10px;flex-wrap:wrap}
+
+    /* Quote cart floating button */
+    .quote-fab{position:fixed;bottom:20px;left:20px;display:flex;align-items:center;gap:10px;background:#101525;border:1px solid #2a3145;color:#fff;padding:12px 16px;border-radius:999px;z-index:60;cursor:pointer}
+    .quote-fab .badge{background:#3b82f6;color:#fff;border-radius:999px;padding:3px 8px;font-size:12px}
+
+    /* Drawer */
+    .drawer{position:fixed;inset:0;display:none}
+    .drawer.active{display:block}
+    .drawer .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+    .drawer .panel{position:absolute;inset-block:0;right:0;width:min(520px,100%);background:#0f1117;border-left:1px solid #1e2130;padding:20px;display:flex;flex-direction:column;gap:14px}
+    .drawer h3{margin:0 0 8px}
+    .cart-items{display:grid;gap:10px;max-height:55vh;overflow:auto;padding-right:6px}
+    .item{display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center;border:1px solid #1e2130;border-radius:12px;padding:8px;background:#0c0e13}
+    .item img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #1e2130}
+    .item .meta{font-size:13px}
+    .item .remove{background:transparent;border:none;color:#ef4444;cursor:pointer}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;display:none}
+    .modal.active{display:block}
+    .modal .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+    .modal .dialog{position:absolute;inset-inline:0;top:5%;margin:auto;max-width:560px;background:#0f1117;border:1px solid #1e2130;border-radius:16px;padding:18px}
+
+    footer{margin:28px 24px;padding:16px;border-top:1px solid #1e2130;color:#94a3b8;display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}
+
+    .toast{position:fixed;top:18px;right:18px;background:#0e1320;border:1px solid #24314d;color:#dbeafe;padding:10px 14px;border-radius:12px;display:none;z-index:80}
+    .toast.show{display:block}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="inner">
+      <div class="brand" onclick="go('#/')"><span class="logo"></span> <span>متجر تجريبي</span></div>
+      <nav class="nav">
+        <a href="#/">الرئيسية</a>
+        <a href="#/categories">الأقسام</a>
+        <a href="#/about">نبذة عنا</a>
+        <a href="#/service">طلب خدمة</a>
+        <a href="#/contact">تواصل</a>
+        <a href="#/quote">سلة عرض السعر</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="slide">
+      <div class="container" style="text-align:center">
+        <h1 style="margin:0 0 6px">واجهة تجريبية</h1>
+        <p class="muted" style="margin:0">متجر كتالوج + سلة طلب عرض سعر — تنقّل بين الصفحات</p>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <div id="app"></div>
+  </main>
+
+  <!-- Floating Quote Button -->
+  <button class="quote-fab" onclick="openDrawer()" aria-label="سلة عرض السعر">
+    <span>سلة عرض السعر</span>
+    <span class="badge" id="cartCount">0</span>
+  </button>
+
+  <!-- Drawer (Quote Cart) -->
+  <aside class="drawer" id="drawer">
+    <div class="backdrop" onclick="closeDrawer()"></div>
+    <div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h3>عناصر طلب عرض السعر</h3>
+        <button class="btn" onclick="closeDrawer()">إغلاق</button>
+      </div>
+      <div class="cart-items" id="cartItems"></div>
+      <div class="stack" style="justify-content:space-between;align-items:center">
+        <span id="itemsCount">0 عناصر</span>
+        <div class="stack">
+          <button class="btn" onclick="clearCart()">تفريغ</button>
+          <button class="btn primary" onclick="go('#/quote'); closeDrawer()">إرسال طلب عرض السعر</button>
+        </div>
+      </div>
+      <p class="muted" style="margin:6px 2px 0">* الأسعار غير مذكورة. سنقوم بالتسعير وإرسال العرض عبر البريد أو الواتساب.</p>
+    </div>
+  </aside>
+
+  <!-- Modal: Quote Form (used on quote page too) -->
+  <div class="modal" id="formModal">
+    <div class="backdrop" onclick="closeForm()"></div>
+    <div class="dialog">
+      <h3 style="margin-top:0">إرسال طلب عرض السعر</h3>
+      <form id="quoteForm" class="form-grid" onsubmit="submitQuote(event)">
+        <div class="field"><label>الاسم الكامل</label><input required type="text" id="fName"></div>
+        <div class="field"><label>البريد الإلكتروني</label><input required type="email" id="fEmail"></div>
+        <div class="field"><label>رقم الجوال</label><input required type="tel" id="fPhone" placeholder="05xxxxxxxx"></div>
+        <div class="field" style="grid-column:1/-1"><label>ملاحظات</label><input type="text" id="fNotes" placeholder="مواصفات إضافية، موعد التسليم..."></div>
+        <div class="field" style="grid-column:1/-1">
+          <div class="stack">
+            <button class="btn" type="button" onclick="closeForm()">إلغاء</button>
+            <button class="btn primary" type="submit">إرسال الآن</button>
+          </div>
+        </div>
+      </form>
+      <p class="muted">(تجريبي) سيتم فتح مسودة بريد + واتساب. في النسخة الفعلية: حفظ DB + إشعار بريد.</p>
+    </div>
+  </div>
+
+  <footer>
+    <div>© متجرك — ديمو</div>
+    <div class="stack">
+      <a href="#/about">نبذة</a>
+      <a href="#/service">طلب خدمة</a>
+      <a href="#/contact">تواصل</a>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast">تمت الإضافة</div>
+
+  <script>
+    // ====== إعدادات قابلة للتعديل ======
+    const ADMIN_EMAIL = 'admin@example.com'; // ← عدّل بريدك الإداري
+    const WA_NUMBER = '9665XXXXXXXX';      // ← ضع رقمك الدولي لواتساب
+
+    // ====== بيانات تجريبية ======
+    const categories = [
+      {slug:'metal-fab', name:'تشغيل معادن', image:'https://images.unsplash.com/photo-1506806732259-39c2d0268443?q=80&w=1200&auto=format&fit=crop'},
+      {slug:'signage', name:'لوحات وإعلانات', image:'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop'},
+      {slug:'events', name:'معارض وفعاليات', image:'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop'}
+    ];
+
+    const products = [
+      {
+        id:'p-001', slug:'steel-stand', category:'metal-fab',
+        name:'ستاند معدني حسب الطلب',
+        desc:'تصنيع ستاند معدني بمقاسات وخامات متعددة وفق احتياجك.',
+        images:[
+          'https://images.unsplash.com/photo-1516542076529-1ea3854896e1?q=80&w=1200&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1511385348-a52b4a160dc2?q=80&w=1200&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop'
+        ],
+        sizes:['صغير','متوسط','كبير'], materials:['ستانلس','ألمنيوم','حديد']
+      },
+      {
+        id:'p-002', slug:'lightbox-sign', category:'signage',
+        name:'لايت بوكس إعلاني',
+        desc:'لايت بوكس بإضاءة LED للواجهات الداخلية والخارجية.',
+        images:[
+          'https://images.unsplash.com/photo-1545259741-2ea3ebf61fa9?q=80&w=1200&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?q=80&w=1200&auto=format&fit=crop'
+        ],
+        sizes:['A3','A2','A1'], materials:['أكريليك','ألمنيوم']
+      },
+      {
+        id:'p-003', slug:'expo-booth', category:'events',
+        name:'جناح عرض (بوث) مودولار',
+        desc:'بوث نمطي قابل للتوسّع مع طباعة ورسومات.',
+        images:[
+          'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop'
+        ],
+        sizes:['3×3 م','6×3 م','6×6 م'], materials:['خشب','ألمنيوم','مركّب']
+      }
+    ];
+
+    // ====== أدوات عامة ======
+    const $ = (s)=>document.querySelector(s);
+    const app = $('#app');
+    const KEY = 'quoteCart';
+
+    function go(hash){ location.hash = hash; }
+    function loadCart(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{ return []} }
+    function saveCart(items){ localStorage.setItem(KEY, JSON.stringify(items)); renderCartFab(); }
+    function renderCartFab(){ $('#cartCount').textContent = loadCart().length; }
+    function showToast(text){ const t=$('#toast'); t.textContent=text; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1400); }
+
+    // ====== رندرة الصفحات ======
+    function renderHome(){
+      app.innerHTML = `
+        <section class="grid cols-3">
+          ${categories.map(c=>`<a class="card category-card" href="#/category/${c.slug}">
+            <img src="${c.image}" alt="${c.name}">
+            <div class="p16"><h3>${c.name}</h3><p class="muted">اطّلع على منتجات ${c.name}</p></div>
+          </a>`).join('')}
+        </section>
+
+        <section style="margin-top:24px">
+          <div class="card p24">
+            <h3 style="margin:0 0 8px">منتجات مميزة</h3>
+            <div class="grid cols-3" style="margin-top:12px">
+              ${products.map(p=>productCard(p)).join('')}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function productCard(p){
+      const img = p.images[0];
+      return `
+      <article class="product-card card p16">
+        <a href="#/product/${p.slug}"><img src="${img}" alt="${p.name}"></a>
+        <div>
+          <h3 style="margin:6px 0 4px">${p.name}</h3>
+          <p class="muted" style="margin:0 0 10px">${p.desc}</p>
+          <div class="stack">
+            <a class="btn primary" href="#/product/${p.slug}">عرض التفاصيل</a>
+            <button class="btn" onclick="quickAdd('${p.id}')">أضف لطلب السعر</button>
+          </div>
+        </div>
+      </article>`;
+    }
+
+    function renderCategories(){
+      app.innerHTML = `
+        <h2 style="margin:0 0 12px">الأقسام</h2>
+        <section class="grid cols-3">
+          ${categories.map(c=>`<a class=card href="#/category/${c.slug}">
+            <img src="${c.image}" alt="${c.name}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-bottom:1px solid #1e2130">
+            <div class="p16"><h3>${c.name}</h3></div>
+          </a>`).join('')}
+        </section>`;
+    }
+
+    function renderCategory(slug){
+      const cat = categories.find(c=>c.slug===slug);
+      if(!cat){ app.innerHTML = `<div class=card p24>قسم غير موجود</div>`; return; }
+      const items = products.filter(p=>p.category===slug);
+      app.innerHTML = `
+        <div class="card p24">
+          <div class="stack" style="justify-content:space-between;align-items:center">
+            <h2 style="margin:0">${cat.name}</h2>
+            <a class="btn" href="#/categories">عودة للأقسام</a>
+          </div>
+          <div class="grid cols-3" style="margin-top:16px">${items.map(productCard).join('')}</div>
+        </div>`;
+    }
+
+    function renderProduct(slug){
+      const p = products.find(x=>x.slug===slug);
+      if(!p){ app.innerHTML = `<div class=card p24>المنتج غير موجود</div>`; return; }
+      const main = p.images[0];
+      app.innerHTML = `
+        <section class="product-layout">
+          <div class="card p24">
+            <div class="gallery">
+              <div class="main"><img id="mainImg" src="${main}" alt="${p.name}"/></div>
+              <div class="thumbs" id="thumbs">${p.images.map((src,i)=>`<img ${i===0?'class=\"active\"':''} src="${src}" data-full="${src}">`).join('')}</div>
+            </div>
+          </div>
+          <div class="card p24">
+            <div class="price-badge">منتج بدون سعر — أضِف لطلب عرض السعر</div>
+            <h2 style="margin:12px 0 8px">${p.name}</h2>
+            <p class="muted">${p.desc}</p>
+
+            <form class="form-grid" onsubmit="addProductToQuote(event,'${p.id}')">
+              <div class="field"><label>المقاس</label>
+                <select id="size">${p.sizes.map((s,i)=>`<option ${i===1?'selected':''}>${s}</option>`).join('')}</select>
+              </div>
+              <div class="field"><label>الخامة</label>
+                <select id="material">${p.materials.map((m,i)=>`<option ${i===0?'selected':''}>${m}</option>`).join('')}</select>
+              </div>
+              <div class="field"><label>الكمية</label><input type="number" id="qty" min="1" value="1"></div>
+              <div class="field" style="align-self:end"><button class="btn primary full" type="submit">أضِف لطلب عرض السعر</button></div>
+            </form>
+
+            <div class="stack" style="margin-top:8px">
+              <button class="btn" onclick="openDrawer()">عرض سلة عرض السعر</button>
+              <a class="btn" href="#/category/${p.category}">عودة للقسم</a>
+            </div>
+          </div>
+        </section>`;
+
+      // thumbs interactions
+      document.querySelectorAll('#thumbs img').forEach(img=>{
+        img.addEventListener('click',()=>{
+          document.querySelectorAll('#thumbs img').forEach(i=>i.classList.remove('active'));
+          img.classList.add('active');
+          $('#mainImg').src = img.dataset.full;
+        });
+      });
+    }
+
+    function renderQuote(){
+      const cart = loadCart();
+      app.innerHTML = `
+        <div class="card p24">
+          <div class="stack" style="justify-content:space-between;align-items:center">
+            <h2 style="margin:0">طلب عرض السعر</h2>
+            <a class="btn" href="#/">العودة للرئيسية</a>
+          </div>
+          <div id="cartView"></div>
+          <hr style="border-color:#1e2130;margin:14px 0">
+          <form id="quoteFormPage" class="form-grid" onsubmit="submitQuote(event)">
+            <div class="field"><label>الاسم الكامل</label><input required type="text" id="fName"></div>
+            <div class="field"><label>البريد الإلكتروني</label><input required type="email" id="fEmail"></div>
+            <div class="field"><label>رقم الجوال</label><input required type="tel" id="fPhone" placeholder="05xxxxxxxx"></div>
+            <div class="field" style="grid-column:1/-1"><label>ملاحظات</label><input type="text" id="fNotes" placeholder="مواصفات إضافية، موعد التسليم..."></div>
+            <div class="field" style="grid-column:1/-1">
+              <div class="stack">
+                <button class="btn" type="button" onclick="clearCart(); renderQuote();">تفريغ السلة</button>
+                <button class="btn primary" type="submit">إرسال الآن</button>
+              </div>
+            </div>
+          </form>
+        </div>`;
+      renderCartList('#cartView');
+    }
+
+    function renderAbout(){
+      app.innerHTML = `
+        <section class="card p24">
+          <h2 style="margin:0 0 12px">نبذة عنا</h2>
+          <p class="muted">نحن فريق تصميم وتنفيذ يقدم حلول تصنيع المعادن، اللوحات الإعلانية، وتجهيز المعارض. نقدم تسعيرًا مخصصًا حسب المقاسات والخامات مع سرعة في التنفيذ وتواصل مباشر عبر البريد والواتساب.</p>
+          <div class="grid cols-3" style="margin-top:12px">
+            <div class="card p16"><h3>رؤيتنا</h3><p class="muted">أن نكون الخيار الأول للحلول المخصصة عالية الجودة.</p></div>
+            <div class="card p16"><h3>قيمنا</h3><p class="muted">السرعة، الشفافية، الالتزام بالجودة.</p></div>
+            <div class="card p16"><h3>خدماتنا</h3><p class="muted">تشغيل معادن، لوحات، أجنحة معارض، طباعة.</p></div>
+          </div>
+        </section>`;
+    }
+
+    function renderContact(){
+      app.innerHTML = `
+        <section class="card p24">
+          <h2 style="margin:0 0 12px">تواصل معنا</h2>
+          <form class="form-grid" onsubmit="submitContact(event)">
+            <div class="field"><label>الاسم</label><input required id="cName" type="text"></div>
+            <div class="field"><label>البريد الإلكتروني</label><input required id="cEmail" type="email"></div>
+            <div class="field"><label>رقم الجوال</label><input id="cPhone" type="tel" placeholder="05xxxxxxxx"></div>
+            <div class="field" style="grid-column:1/-1"><label>الموضوع</label><input required id="cSubject" type="text" placeholder="استفسار/تعاون/عروض"></div>
+            <div class="field" style="grid-column:1/-1"><label>الرسالة</label><textarea required id="cMessage" placeholder="اكتب رسالتك هنا..."></textarea></div>
+            <div class="field" style="grid-column:1/-1"><button class="btn primary" type="submit">إرسال</button></div>
+          </form>
+        </section>`;
+    }
+
+    function renderService(){
+      app.innerHTML = `
+        <section class="card p24">
+          <h2 style="margin:0 0 12px">طلب خدمة مباشر</h2>
+          <p class="muted">هذا النموذج لطلب تنفيذ خدمة دون اختيار منتجات محددة.</p>
+          <form class="form-grid" onsubmit="submitService(event)">
+            <div class="field"><label>نوع الخدمة</label>
+              <select id="sType">
+                <option>تشغيل معادن</option>
+                <option>لوحات وإعلانات</option>
+                <option>تجهيز معرض/بوث</option>
+                <option>طباعة رقمية</option>
+                <option>أخرى</option>
+              </select>
+            </div>
+            <div class="field"><label>الميزانية التقريبية (اختياري)</label><input id="sBudget" type="text" placeholder="مثال: 5,000 SAR"></div>
+            <div class="field" style="grid-column:1/-1"><label>وصف الطلب</label><textarea id="sDetails" required placeholder="المقاسات، الخامات، الكميات، الموعد المتوقع..."></textarea></div>
+            <div class="field"><label>الاسم الكامل</label><input id="sName" required type="text"></div>
+            <div class="field"><label>البريد الإلكتروني</label><input id="sEmail" required type="email"></div>
+            <div class="field"><label>رقم الجوال</label><input id="sPhone" required type="tel" placeholder="05xxxxxxxx"></div>
+            <div class="field"><label>رابط ملف (اختياري)</label><input id="sFile" type="text" placeholder="Google Drive/Dropbox"></div>
+            <div class="field" style="grid-column:1/-1"><button class="btn primary" type="submit">إرسال الطلب</button></div>
+          </form>
+        </section>`;
+    }
+
+    // ====== وظائف السلة ======
+    function addProductToQuote(e, pid){
+      e.preventDefault();
+      const p = products.find(x=>x.id===pid);
+      const item = {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        image: p.images[0],
+        size: $('#size').value,
+        material: $('#material').value,
+        qty: Math.max(1, parseInt($('#qty').value||'1'))
+      };
+      const cart = loadCart(); cart.push(item); saveCart(cart);
+      showToast('تمت الإضافة ✨');
+    }
+
+    function quickAdd(pid){
+      const p = products.find(x=>x.id===pid);
+      const item = {id:p.id, slug:p.slug, name:p.name, image:p.images[0], size:'متوسط', material:(p.materials&&p.materials[0])||'خامة', qty:1};
+      const cart = loadCart(); cart.push(item); saveCart(cart); showToast('أُضيف للطلب');
+    }
+
+    function removeItem(idx){ const cart=loadCart(); cart.splice(idx,1); saveCart(cart); renderCartList(); renderCartList('#cartView'); }
+    function clearCart(){ saveCart([]); renderCartList(); renderCartList('#cartView'); }
+
+    function renderCart(){
+      const cart = loadCart();
+      const cc = $('#cartCount'); if(cc) cc.textContent = cart.length;
+      const ic = $('#itemsCount'); if(ic) ic.textContent = cart.length + ' عناصر';
+      const wrap = $('#cartItems'); if(!wrap) return;
+      wrap.innerHTML = '';
+      cart.forEach((it,idx)=>{
+        const el = document.createElement('div');
+        el.className='item';
+        el.innerHTML = `
+          <img src="${it.image}" alt="${it.name}">
+          <div class="meta">
+            <div style="font-weight:600">${it.name}</div>
+            <div class="muted">المقاس: ${it.size} • الخامة: ${it.material}</div>
+            <div class="muted">الكمية: ${it.qty}</div>
+          </div>
+          <button class="remove" onclick="removeItem(${idx})">حذف</button>`;
+        wrap.appendChild(el);
+      });
+    }
+
+    function renderCartList(selector){
+      const sel = selector||'#cartItems';
+      const wrap = document.querySelector(sel); if(!wrap) return;
+      const cart = loadCart();
+      if(cart.length===0){ wrap.innerHTML = '<p class="muted">سلتك فارغة.</p>'; return; }
+      wrap.innerHTML = cart.map((it,idx)=>`
+        <div class="item">
+          <img src="${it.image}" alt="${it.name}">
+          <div class="meta">
+            <div style="font-weight:600">${it.name}</div>
+            <div class="muted">المقاس: ${it.size} • الخامة: ${it.material} • الكمية: ${it.qty}</div>
+          </div>
+          <button class="remove" onclick="removeItem(${idx})">حذف</button>
+        </div>`).join('');
+    }
+
+    function openDrawer(){ $('#drawer').classList.add('active'); renderCart(); }
+    function closeDrawer(){ $('#drawer').classList.remove('active'); }
+
+    function openForm(){ if(loadCart().length===0){showToast('السلة فارغة');return;} $('#formModal').classList.add('active'); }
+    function closeForm(){ $('#formModal').classList.remove('active'); }
+
+    // ====== إرسال (تجريبي) ======
+    function submitQuote(e){
+      e.preventDefault();
+      const name=$('#fName').value.trim();
+      const email=$('#fEmail').value.trim();
+      const phone=$('#fPhone').value.trim();
+      const notes=$('#fNotes').value.trim();
+      const cart=loadCart();
+      if(cart.length===0){showToast('السلة فارغة');return;}
+
+      const lines = cart.map((it,i)=>`${i+1}) ${it.name} | Qty:${it.qty} | Size:${it.size} | Material:${it.material}`);
+      const subject = encodeURIComponent(`طلب عرض سعر — ${name}`);
+      const body = encodeURIComponent(`الاسم: ${name}
+البريد: ${email}
+الجوال: ${phone}
+
+العناصر:
+${lines.join('
+')}
+
+ملاحظات:
+${notes}`);
+
+      const mailto = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+      window.location.href = mailto;
+
+      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('طلب عرض سعر جديد%0A%0A'+lines.join('%0A'))}`;
+      setTimeout(()=>window.open(wa,'_blank'), 400);
+
+      showToast('تم إنشاء مسودة الإرسال');
+    }
+
+    function submitContact(e){
+      e.preventDefault();
+      const name=$('#cName').value.trim();
+      const email=$('#cEmail').value.trim();
+      const phone=$('#cPhone').value.trim();
+      const subjectRaw=$('#cSubject').value.trim();
+      const message=$('#cMessage').value.trim();
+      const subject = encodeURIComponent(`[تواصل] ${subjectRaw} — ${name}`);
+      const body = encodeURIComponent(`الاسم: ${name}
+البريد: ${email}
+الجوال: ${phone}
+
+الرسالة:
+${message}`);
+      window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+      const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('رسالة تواصل من '+name+'%0A%0A'+message)}`;
+      setTimeout(()=>window.open(wa,'_blank'), 400);
+      showToast('تم تجهيز رسالة التواصل');
+    }
+
+    function submitService(e){
+      e.preventDefault();
+      const type=$('#sType').value;
+      const budget=$('#sBudget').value.trim();
+      const details=$('#sDetails').value.trim();
+      const name=$('#sName').value.trim();
+      const email=$('#sEmail').value.trim();
+      const phone=$('#sPhone').value.trim();
+      const file=$('#sFile').value.trim();
+
+      const subject = encodeURIComponent(`طلب خدمة — ${type} — ${name}`);
+      const body = encodeURIComponent(
+        `الاسم: ${name}
+البريد: ${email}
+الجوال: ${phone}
+النوع: ${type}
+الميزانية: ${budget}
+رابط ملف: ${file}
+
+التفاصيل:
+${details}`
+      );
+      window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+      const waText = `طلب خدمة جديد%0Aالنوع: ${type}%0Aالاسم: ${encodeURIComponent(name)}%0A${encodeURIComponent(details)}`;
+      setTimeout(()=>window.open(`https://wa.me/${WA_NUMBER}?text=${waText}`, '_blank'), 400);
+      showToast('تم تجهيز طلب الخدمة');
+    }
+
+    // ====== راوتر بسيط ======
+    function router(){
+      const h = location.hash || '#/';
+      const parts = h.replace('#','').split('/');
+      const route = parts[1]||'';
+      const param = parts[2];
+      switch(route){
+        case '':
+          renderHome(); break;
+        case 'categories':
+          renderCategories(); break;
+        case 'category':
+          renderCategory(param); break;
+        case 'product':
+          renderProduct(param); break;
+        case 'quote':
+          renderQuote(); break;
+        case 'about':
+          renderAbout(); break;
+        case 'contact':
+          renderContact(); break;
+        case 'service':
+          renderService(); break;
+        default:
+          renderHome();
+      }
+      renderCartFab();
+    }
+
+    window.addEventListener('hashchange', router);
+    window.addEventListener('load', router);
+  </script>
+</body>
+</html>
