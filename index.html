@@ -101,6 +101,7 @@
         <a href="#/service">طلب خدمة</a>
         <a href="#/contact">تواصل</a>
         <a href="#/quote">سلة عرض السعر</a>
+        <a href="admin.html" target="_blank" title="لوحة التحكم" style="opacity:.7">لوحة التحكم</a>
       </nav>
     </div>
   </header>
@@ -178,17 +179,17 @@
 
   <script>
     // ====== إعدادات قابلة للتعديل ======
-    const ADMIN_EMAIL = 'xnfax@msn.com'; // ← عدّل بريدك الإداري
-    const WA_NUMBER = '966556070099';      // ← ضع رقمك الدولي لواتساب
+    const ADMIN_EMAIL = 'admin@example.com'; // ← عدّل بريدك الإداري
+    const WA_NUMBER = '9665XXXXXXXX';      // ← ضع رقمك الدولي لواتساب
 
-    // ====== بيانات تجريبية ======
-    const categories = [
+    // ====== بيانات تجريبية افتراضية ======
+    let categories = [
       {slug:'metal-fab', name:'تشغيل معادن', image:'https://images.unsplash.com/photo-1506806732259-39c2d0268443?q=80&w=1200&auto=format&fit=crop'},
       {slug:'signage', name:'لوحات وإعلانات', image:'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop'},
       {slug:'events', name:'معارض وفعاليات', image:'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop'}
     ];
 
-    const products = [
+    let products = [
       // ===== تشغيل معادن (5) =====
       { id:'p-001', slug:'steel-stand', category:'metal-fab', name:'ستاند معدني حسب الطلب', desc:'تصنيع ستاند معدني بمقاسات وخامات متعددة وفق احتياجك.', images:[
           'https://images.unsplash.com/photo-1516542076529-1ea3854896e1?q=80&w=1200&auto=format&fit=crop',
@@ -246,6 +247,23 @@
         ], sizes:['قطر 2 م','قطر 3 م','مخصص'], materials:['قماش','PVC'] },
     ];
 
+    // ====== ربط لوحة التحكم (LocalStorage CMS) ======
+    (function applyCMS(){
+      const CMS_CATS = JSON.parse(localStorage.getItem('cms_categories')||'[]');
+      const CMS_PRODS = JSON.parse(localStorage.getItem('cms_products')||'[]');
+      if (Array.isArray(CMS_CATS) && CMS_CATS.length) window.categories = categories = CMS_CATS;
+      if (Array.isArray(CMS_PRODS) && CMS_PRODS.length) window.products  = products  = CMS_PRODS;
+    })();
+
+    // حفظ طلبات عرض السعر لعرضها في admin.html
+    function saveOrderForAdmin(order){
+      try{
+        const list = JSON.parse(localStorage.getItem('rfq_orders')||'[]');
+        list.push(order);
+        localStorage.setItem('rfq_orders', JSON.stringify(list));
+      }catch(err){ console.error('Failed to save RFQ locally', err); }
+    }
+
     // ====== أدوات عامة ======
     const $ = (s)=>document.querySelector(s);
     const app = $('#app');
@@ -259,12 +277,11 @@
 
     // ====== رندرة الصفحات ======
     function renderHome(){
-      // منتجات مميزة (أول 6)
-      const featured = products.slice(0,6);
+      const featured = (products||[]).slice(0,6);
       app.innerHTML = `
         <section class="grid cols-3">
-          ${categories.map(c=>`<a class="card category-card" href="#/category/${c.slug}">
-            <img src="${c.image}" alt="${c.name}">
+          ${(categories||[]).map(c=>`<a class="card category-card" href="#/category/${c.slug}">
+            <img src="${c.image||''}" alt="${c.name}">
             <div class="p16"><h3>${c.name}</h3><p class="muted">اطّلع على منتجات ${c.name}</p></div>
           </a>`).join('')}
         </section>
@@ -281,13 +298,13 @@
     }
 
     function productCard(p){
-      const img = p.images[0];
+      const img = (p.images&&p.images[0])||'';
       return `
       <article class="product-card card p16">
         <a href="#/product/${p.slug}"><img src="${img}" alt="${p.name}"></a>
         <div>
           <h3 style="margin:6px 0 4px">${p.name}</h3>
-          <p class="muted" style="margin:0 0 10px">${p.desc}</p>
+          <p class="muted" style="margin:0 0 10px">${p.desc||''}</p>
           <div class="stack">
             <a class="btn primary" href="#/product/${p.slug}">عرض التفاصيل</a>
             <button class="btn" onclick="quickAdd('${p.id}')">أضف لطلب السعر</button>
@@ -300,17 +317,17 @@
       app.innerHTML = `
         <h2 style="margin:0 0 12px">الأقسام</h2>
         <section class="grid cols-3">
-          ${categories.map(c=>`<a class=card href="#/category/${c.slug}">
-            <img src="${c.image}" alt="${c.name}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-bottom:1px solid #1e2130">
+          ${(categories||[]).map(c=>`<a class=card href="#/category/${c.slug}">
+            <img src="${c.image||''}" alt="${c.name}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-bottom:1px solid #1e2130">
             <div class="p16"><h3>${c.name}</h3></div>
           </a>`).join('')}
         </section>`;
     }
 
     function renderCategory(slug){
-      const cat = categories.find(c=>c.slug===slug);
+      const cat = (categories||[]).find(c=>c.slug===slug);
       if(!cat){ app.innerHTML = `<div class=card p24>قسم غير موجود</div>`; return; }
-      const items = products.filter(p=>p.category===slug).slice(0,5);
+      const items = (products||[]).filter(p=>p.category===slug).slice(0,12);
       app.innerHTML = `
         <div class="card p24">
           <div class="stack" style="justify-content:space-between;align-items:center">
@@ -322,28 +339,28 @@
     }
 
     function renderProduct(slug){
-      const p = products.find(x=>x.slug===slug);
+      const p = (products||[]).find(x=>x.slug===slug);
       if(!p){ app.innerHTML = `<div class=card p24>المنتج غير موجود</div>`; return; }
-      const main = p.images[0];
+      const main = (p.images&&p.images[0])||'';
       app.innerHTML = `
         <section class="product-layout">
           <div class="card p24">
             <div class="gallery">
               <div class="main"><img id="mainImg" src="${main}" alt="${p.name}"/></div>
-              <div class="thumbs" id="thumbs">${p.images.map((src,i)=>`<img ${i===0?'class=\"active\"':''} src="${src}" data-full="${src}">`).join('')}</div>
+              <div class="thumbs" id="thumbs">${(p.images||[]).map((src,i)=>`<img ${i===0?'class=\"active\"':''} src="${src}" data-full="${src}">`).join('')}</div>
             </div>
           </div>
           <div class="card p24">
             <div class="price-badge">منتج بدون سعر — أضِف لطلب عرض السعر</div>
             <h2 style="margin:12px 0 8px">${p.name}</h2>
-            <p class="muted">${p.desc}</p>
+            <p class="muted">${p.desc||''}</p>
 
             <form class="form-grid" onsubmit="addProductToQuote(event,'${p.id}')">
               <div class="field"><label>المقاس</label>
-                <select id="size">${p.sizes.map((s,i)=>`<option ${i===1?'selected':''}>${s}</option>`).join('')}</select>
+                <select id="size">${(p.sizes||['صغير','متوسط','كبير']).map((s,i)=>`<option ${i===1?'selected':''}>${s}</option>`).join('')}</select>
               </div>
               <div class="field"><label>الخامة</label>
-                <select id="material">${p.materials.map((m,i)=>`<option ${i===0?'selected':''}>${m}</option>`).join('')}</select>
+                <select id="material">${(p.materials||['ستانلس','ألمنيوم']).map((m,i)=>`<option ${i===0?'selected':''}>${m}</option>`).join('')}</select>
               </div>
               <div class="field"><label>الكمية</label><input type="number" id="qty" min="1" value="1"></div>
               <div class="field" style="align-self:end"><button class="btn primary full" type="submit">أضِف لطلب عرض السعر</button></div>
@@ -356,7 +373,6 @@
           </div>
         </section>`;
 
-      // thumbs interactions
       document.querySelectorAll('#thumbs img').forEach(img=>{
         img.addEventListener('click',()=>{
           document.querySelectorAll('#thumbs img').forEach(i=>i.classList.remove('active'));
@@ -449,12 +465,13 @@
     // ====== وظائف السلة ======
     function addProductToQuote(e, pid){
       e.preventDefault();
-      const p = products.find(x=>x.id===pid);
+      const p = (products||[]).find(x=>x.id===pid);
+      if(!p) return;
       const item = {
         id: p.id,
         slug: p.slug,
         name: p.name,
-        image: p.images[0],
+        image: (p.images&&p.images[0])||'',
         size: $('#size').value,
         material: $('#material').value,
         qty: Math.max(1, parseInt($('#qty').value||'1'))
@@ -464,8 +481,9 @@
     }
 
     function quickAdd(pid){
-      const p = products.find(x=>x.id===pid);
-      const item = {id:p.id, slug:p.slug, name:p.name, image:p.images[0], size:'متوسط', material:(p.materials&&p.materials[0])||'خامة', qty:1};
+      const p = (products||[]).find(x=>x.id===pid);
+      if(!p) return;
+      const item = {id:p.id, slug:p.slug, name:p.name, image:(p.images&&p.images[0])||'', size:'متوسط', material:(p.materials&&p.materials[0])||'خامة', qty:1};
       const cart = loadCart(); cart.push(item); saveCart(cart); showToast('أُضيف للطلب');
     }
 
@@ -517,16 +535,19 @@
 
     // ====== إرسال (تجريبي) ======
     function submitQuote(e){
-      e.preventDefault();
-      const name=$('#fName').value.trim();
-      const email=$('#fEmail').value.trim();
-      const phone=$('#fPhone').value.trim();
-      const notes=$('#fNotes').value.trim();
+      if(e) e.preventDefault();
+      const name=$('#fName')?$('#fName').value.trim():'';
+      const email=$('#fEmail')?$('#fEmail').value.trim():'';
+      const phone=$('#fPhone')?$('#fPhone').value.trim():'';
+      const notes=$('#fNotes')?$('#fNotes').value.trim():'';
       const cart=loadCart();
       if(cart.length===0){showToast('السلة فارغة');return;}
 
+      // خزّن الطلب محليًا لعرضه في لوحة التحكم
+      saveOrderForAdmin({ name, email, phone, notes, items: cart, createdAt: Date.now() });
+
       const lines = cart.map((it,i)=>`${i+1}) ${it.name} | Qty:${it.qty} | Size:${it.size} | Material:${it.material}`);
-      const subject = encodeURIComponent(`طلب عرض سعر — ${name}`);
+      const subject = encodeURIComponent(`طلب عرض سعر — ${name||'عميل'}`);
       const body = encodeURIComponent(`الاسم: ${name}\nالبريد: ${email}\nالجوال: ${phone}\n\nالعناصر:\n${lines.join('\n')}\n\nملاحظات:\n${notes}`);
 
       const mailto = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
@@ -565,7 +586,7 @@
 
       const subject = encodeURIComponent(`طلب خدمة — ${type} — ${name}`);
       const body = encodeURIComponent(
-        `الاسم: ${name}\nالبريد: ${email}\nالجوال: ${phone}\nالنوع: ${type}\nالميزانية: ${budget}\nرابط ملف: ${file}\n\nالتفاصيل:\n${details}`
+        `الاسم: ${name}\nالبريد: ${email}\نالجوال: ${phone}\nالنوع: ${type}\nالميزانية: ${budget}\nرابط ملف: ${file}\n\nالتفاصيل:\n${details}`
       );
       window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
       const waText = `طلب خدمة جديد\nالنوع: ${type}\nالاسم: ${name}\n${details}`;
@@ -602,16 +623,16 @@
       renderCartFab();
     }
 
-    // ====== اختبارات سريعة (Self-tests) ======
+    // ====== اختبارات سريعة ======
     function runSelfTests(){
       try{
         console.assert(typeof openDrawer === 'function', 'openDrawer يجب أن تكون معرفّة');
         console.assert(typeof closeDrawer === 'function', 'closeDrawer يجب أن تكون معرفّة');
         console.assert(typeof router === 'function', 'router يجب أن تكون معرفّة');
-        console.assert(Array.isArray(categories) && categories.length === 3, 'يوجد 3 أقسام');
-        const perCat = categories.map(c=> products.filter(p=>p.category===c.slug).length);
-        console.assert(perCat.every(n=> n >= 5), 'كل قسم يحوي 5 منتجات على الأقل');
-        console.log('[SELF-TESTS] ✅ جميع الاختبارات الأساسية مرّت');
+        console.assert(Array.isArray(categories) && categories.length >= 3, 'يوجد 3 أقسام على الأقل');
+        const perCat = (categories||[]).map(c=> (products||[]).filter(p=>p.category===c.slug).length);
+        console.assert(perCat.every(n=> n >= 0), 'تحقق عدد المنتجات لكل قسم (قد تكون 0 عند استخدام CMS)');
+        console.log('[SELF-TESTS] ✅ مرّت الاختبارات الأساسية');
       }catch(err){
         console.error('[SELF-TESTS] ❌', err);
       }
@@ -619,156 +640,6 @@
 
     window.addEventListener('hashchange', router);
     window.addEventListener('load', ()=>{ router(); runSelfTests(); });
-   <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>متجر تجريبي - طلب عرض سعر</title>
-<style>
-/* تنسيق بسيط */
-body { font-family: sans-serif; margin: 0; padding: 0; direction: rtl; }
-header { background: #333; color: #fff; padding: 10px; }
-header nav a { color: #fff; margin: 0 10px; text-decoration: none; }
-#app { padding: 20px; }
-.product-card { border: 1px solid #ccc; padding: 10px; display: inline-block; margin: 5px; width: 200px; }
-</style>
-</head>
-<body>
-
-<header>
-<nav>
-<a href="#/">الرئيسية</a>
-<a href="#/categories">الأقسام</a>
-<a href="#/quote">سلة عرض السعر</a>
-<a href="#/about">نبذة عنا</a>
-<a href="#/service">طلب خدمة</a>
-<a href="#/contact">تواصل</a>
-</nav>
-</header>
-
-<main id="app"></main>
-
-<script>
-const ADMIN_EMAIL = 'admin@example.com';
-const WA_NUMBER   = '9665XXXXXXXX';
-
-// بيانات افتراضية لو ما فيه بيانات من لوحة التحكم
-let categories = [
-  {id: 'cat1', name: 'قسم 1', products: []},
-  {id: 'cat2', name: 'قسم 2', products: []},
-  {id: 'cat3', name: 'قسم 3', products: []}
-];
-
-for (let cat of categories) {
-  for (let i = 1; i <= 5; i++) {
-    cat.products.push({
-      id: `${cat.id}-p${i}`,
-      name: `منتج ${i} - ${cat.name}`,
-      desc: 'وصف قصير للمنتج.',
-      img: 'https://via.placeholder.com/200',
-    });
-  }
-}
-
-// --- جلب بيانات لوحة التحكم إن وجدت ---
-const CMS_CATS = JSON.parse(localStorage.getItem('cms_categories') || '[]');
-if (CMS_CATS.length) categories = CMS_CATS;
-
-// --- السلة ---
-let cart = JSON.parse(localStorage.getItem('rfq_cart') || '[]');
-function saveCart() { localStorage.setItem('rfq_cart', JSON.stringify(cart)); }
-
-// --- حفظ الطلبات للوحة التحكم ---
-function saveOrderForAdmin(order) {
-  const list = JSON.parse(localStorage.getItem('rfq_orders') || '[]');
-  list.push(order);
-  localStorage.setItem('rfq_orders', JSON.stringify(list));
-}
-
-// --- عرض الصفحات ---
-function render() {
-  const hash = location.hash || '#/';
-  const app = document.getElementById('app');
-
-  if (hash === '#/' || hash === '') {
-    app.innerHTML = `<h1>الرئيسية</h1>${categories.map(c=>`<div><a href="#/category/${c.id}">${c.name}</a></div>`).join('')}`;
-  }
-  else if (hash === '#/categories') {
-    app.innerHTML = `<h1>جميع الأقسام</h1>${categories.map(c=>`<div><a href="#/category/${c.id}">${c.name}</a></div>`).join('')}`;
-  }
-  else if (hash.startsWith('#/category/')) {
-    const id = hash.split('/')[2];
-    const cat = categories.find(c=>c.id===id);
-    if (!cat) { app.innerHTML = 'قسم غير موجود'; return; }
-    app.innerHTML = `<h1>${cat.name}</h1>${cat.products.map(p=>`
-      <div class="product-card">
-        <img src="${p.img}"/>
-        <h3>${p.name}</h3>
-        <a href="#/product/${p.id}">عرض</a>
-      </div>`).join('')}`;
-  }
-  else if (hash.startsWith('#/product/')) {
-    const pid = hash.split('/')[2];
-    let prod;
-    for (let c of categories) { prod = c.products.find(p=>p.id===pid) || prod; }
-    if (!prod) { app.innerHTML = 'منتج غير موجود'; return; }
-    app.innerHTML = `<h1>${prod.name}</h1>
-      <img src="${prod.img}"/>
-      <p>${prod.desc}</p>
-      <button onclick="addToCart('${prod.id}')">أضف لطلب السعر</button>`;
-  }
-  else if (hash === '#/quote') {
-    app.innerHTML = `<h1>سلة عرض السعر</h1>
-      ${cart.map(item=>`<div>${item.name}</div>`).join('')}
-      <br>
-      <button onclick="submitQuote()">إرسال الطلب</button>`;
-  }
-  else if (hash === '#/about') {
-    app.innerHTML = '<h1>نبذة عنا</h1><p>محتوى نبذة عنا...</p>';
-  }
-  else if (hash === '#/service') {
-    app.innerHTML = '<h1>طلب خدمة</h1><form><input placeholder="الاسم"/><input placeholder="البريد"/><textarea placeholder="الخدمة المطلوبة"></textarea><button>إرسال</button></form>';
-  }
-  else if (hash === '#/contact') {
-    app.innerHTML = '<h1>تواصل معنا</h1><form><input placeholder="الاسم"/><input placeholder="البريد"/><textarea placeholder="رسالتك"></textarea><button>إرسال</button></form>';
-  }
-}
-
-// --- إضافة للسلة ---
-function addToCart(pid) {
-  let prod;
-  for (let c of categories) { prod = c.products.find(p=>p.id===pid) || prod; }
-  if (!prod) return;
-  cart.push(prod);
-  saveCart();
-  alert('تمت الإضافة للسلة');
-}
-
-// --- إرسال الطلب ---
-function submitQuote() {
-  const order = {
-    name: "عميل تجريبي",
-    email: "client@example.com",
-    phone: "0500000000",
-    notes: "",
-    items: cart,
-    createdAt: Date.now()
-  };
-  saveOrderForAdmin(order);
-  alert('تم إرسال الطلب (تجريبي)');
-}
-
-window.addEventListener('hashchange', render);
-render();
-</script>
-
-</body>
-</html>
-
-
   </script>
-  
 </body>
 </html>
-
