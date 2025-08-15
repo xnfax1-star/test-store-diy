@@ -1,0 +1,38 @@
+body {
+  font-family: 'Tahoma', sans-serif;
+  background-color: #f9f9f9;
+  margin: 0;
+  direction: rtl;
+}
+
+header {
+  background-color: #333;
+  color: white;
+  padding: 10px;
+}
+
+header nav a {
+  color: white;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+header nav a:hover {
+  text-decoration: underline;
+}
+
+.product-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: white;
+  padding: 10px;
+  display: inline-block;
+  width: 200px;
+  margin: 10px;
+  vertical-align: top;
+}
+
+.product-card img {
+  width: 100%;
+  border-radius: 8px;
+}
