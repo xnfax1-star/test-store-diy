@@ -1,9 +1,5 @@
-body {
-  font-family: 'Tahoma', sans-serif;
-  background-color: #yellow;
-  margin: 0;
-  direction: rtl;
-}
+body { background-color: yellow; }
+
 
 header {
   background-color: #333;
